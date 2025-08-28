@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Pico y Placa Solidario</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ORIENTACIÓN HORIZONTAL - LANDSCAPE */
+        @media screen and (orientation: landscape) {
+            .container {
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100vw;
+                padding: 10px;
+                gap: 15px;
+            }
+
+            .left-panel {
+                flex: 1;
+                min-width: 300px;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .right-panel {
+                flex: 1;
+                min-width: 300px;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header {
+                margin-bottom: 15px;
+                padding: 15px;
+            }
+
+            .placa-container {
+                margin: 10px 0;
+                padding: 15px;
+            }
+
+            .placa {
+                font-size: 36px;
+                letter-spacing: 6px;
+            }
+
+            .status-card {
+                margin: 10px 0;
+                padding: 20px;
+            }
+
+            .status-icon {
+                font-size: 36px;
+                margin-bottom: 10px;
+            }
+
+            .saldo-card {
+                padding: 20px;
+                margin: 10px 0;
+            }
+
+            .saldo-amount {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                margin: 15px 0;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .info-panel {
+                padding: 15px;
+                margin: 10px 0;
+            }
+
+            .button {
+                padding: 12px;
+                margin: 5px 0;
+                font-size: 14px;
+            }
+
+            .gps-status {
+                padding: 12px;
+                margin: 10px 0;
+            }
+
+            .footer {
+                margin-top: 15px;
+                padding: 10px;
+            }
+        }
+
+        /* ORIENTACIÓN VERTICAL - PORTRAIT (mantener diseño original) */
+        @media screen and (orientation: portrait) {
+            .left-panel, .right-panel {
+                width: 100%;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .placa-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+
+        .placa {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FFD700;
+            letter-spacing: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .status-card {
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-libre {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4CAF50;
+        }
+
+        .status-activo {
+            background: rgba(244, 67, 54, 0.3);
+            border: 2px solid #F44336;
+        }
+
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-detail {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .saldo-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .saldo-label {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .saldo-amount {
+            font-size: 42px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .saldo-low {
+            color: #FF5722;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .gps-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .gps-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .gps-active {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .gps-inactive {
+            background: #757575;
+        }
+
+        .button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .info-value {
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .install-prompt {
+            background: rgba(33, 150, 243, 0.3);
+            border: 2px solid #2196F3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Panel izquierdo -->
+        <div class="left-panel">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">STTM Pasto</div>
+                <div class="subtitle">Control Pico y Placa Solidario</div>
+            </div>
+
+            <!-- Prompt de instalación -->
+            <div id="installPrompt" class="install-prompt hidden">
+                <strong>¡Instala la app!</strong><br>
+                Toca el menú de tu navegador y selecciona "Agregar a pantalla de inicio"
+            </div>
+
+            <!-- Placa del vehículo -->
+            <div class="placa-container">
+                <div class="placa" id="placa">AVC 567</div>
+            </div>
+
+            <!-- Estado actual -->
+            <div class="status-card" id="statusCard">
+                <div class="status-icon" id="statusIcon">⏳</div>
+                <div class="status-text" id="statusText">Verificando estado...</div>
+                <div class="status-detail" id="statusDetail">Cargando información</div>
+            </div>
+
+            <!-- Estado GPS -->
+            <div class="gps-status">
+                <div class="gps-dot" id="gpsDot"></div>
+                <span id="gpsStatus">GPS Desactivado</span>
+            </div>
+        </div>
+
+        <!-- Panel derecho -->
+        <div class="right-panel">
+            <!-- Saldo -->
+            <div class="saldo-card">
+                <div class="saldo-label">Saldo Disponible</div>
+                <div class="saldo-amount" id="saldo">$47,500</div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="kmHoy">0.0</div>
+                    <div class="stat-label">km recorridos hoy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="costoHoy">$0</div>
+                    <div class="stat-label">gastado hoy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">$800</div>
+                    <div class="stat-label">tarifa por km</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="velocidad">0</div>
+                    <div class="stat-label">km/h promedio</div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="info-panel">
+                <div class="info-row">
+                    <span class="info-label">Fecha:</span>
+                    <span class="info-value" id="fecha">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Hora:</span>
+                    <span class="info-value" id="hora">--:--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ubicación:</span>
+                    <span class="info-value" id="ubicacion">Obteniendo...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Precisión GPS:</span>
+                    <span class="info-value" id="precision">-- metros</span>
+                </div>
+            </div>
+
+            <!-- Botones de control -->
+            <button class="button btn-primary" id="btnIniciar" onclick="iniciarSistema()">
+                Iniciar Sistema GPS
+            </button>
+
+            <button class="button btn-danger hidden" id="btnDetener" onclick="detenerSistema()">
+                Detener Sistema
+            </button>
+
+            <button class="button btn-secondary" onclick="recargarSaldo()">
+                💳 Recargar Saldo
+            </button>
+
+            <button class="button btn-secondary" onclick="verHistorial()">
+                📊 Ver Historial
+            </button>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div>Sistema de Control Vehicular</div>
+                <div>Alcaldía de Pasto - STTM</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales del sistema
+        let sistemaActivo = false;
+        let gpsActivo = false;
+        let posicionActual = null;
+        let posicionAnterior = null;
+        let distanciaTotal = 0;
+        let costoTotal = 0;
+        let saldoActual = 47500;
+        let velocidadPromedio = 0;
+        let watchId = null;
+
+        // Configuración del sistema
+        const TARIFA_POR_KM = 800;
+        const PLACA_VEHICULO = "AVC567";
+
+        // Calendario de pico y placa (formato YYYY-MM-DD: [dígitos])
+        const calendarioPicoPlaca = {
+            "2025-08-28": [6, 7], // Jueves - placas terminadas en 6,7
+            "2025-08-29": [8, 9], // Viernes - placas terminadas en 8,9
+            "2025-09-01": [0, 1], // Lunes - placas terminadas en 0,1
+            "2025-09-02": [2, 3], // Martes - placas terminadas en 2,3
+            "2025-09-03": [4, 5], // Miércoles - placas terminadas en 4,5
+            "2025-09-04": [6, 7], // Jueves - placas terminadas en 6,7
+            "2025-09-05": [8, 9]  // Viernes - placas terminadas en 8,9
+        };
+
+        // Inicialización de la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarApp();
+            verificarInstalacion();
+            setInterval(actualizarReloj, 1000);
+        });
+
+        function inicializarApp() {
+            console.log('Inicializando Control Pico y Placa...');
+            verificarEstadoPicoPlaca();
+            cargarDatosLocales();
+            actualizarInterfaz();
+        }
+
+        // Verificar si es día de pico y placa
+        function verificarEstadoPicoPlaca() {
+            const hoy = new Date();
+            const fechaStr = hoy.toISOString().split('T')[0];
+            const ultimoDigito = parseInt(PLACA_VEHICULO.slice(-1));
+            
+            const digitosHoy = calendarioPicoPlaca[fechaStr];
+            
+            if (digitosHoy && digitosHoy.includes(ultimoDigito)) {
+                mostrarEstado('activo', 'PICO Y PLACA ACTIVO', `La placa ${PLACA_VEHICULO} debe pagar por circular hoy`);
+            } else {
+                mostrarEstado('libre', 'CIRCULACIÓN LIBRE', `La placa ${PLACA_VEHICULO} puede circular sin restricciones hoy`);
+            }
+        }
+
+        function mostrarEstado(tipo, titulo, detalle) {
+            const card = document.getElementById('statusCard');
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            const detail = document.getElementById('statusDetail');
+
+            if (tipo === 'activo') {
+                card.className = 'status-card status-activo';
+                icon.textContent = '🚫';
+            } else {
+                card.className = 'status-card status-libre';
+                icon.textContent = '✅';
+            }
+
+            text.textContent = titulo;
+            detail.textContent = detalle;
+        }
+
+        // Sistema GPS
+        function iniciarSistema() {
+            if (!navigator.geolocation) {
+                alert('Tu dispositivo no soporta GPS');
+                return;
+            }
+
+            document.getElementById('btnIniciar').innerHTML = '<div class="loading"></div> Iniciando GPS...';
+            document.getElementById('btnIniciar').disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    posicionActual = position;
+                    posicionAnterior = position;
+                    iniciarTracking();
+                    sistemaActivo = true;
+                    gpsActivo = true;
+                    actualizarInterfazGPS();
+                    
+                    document.getElementById('btnIniciar').classList.add('hidden');
+                    document.getElementById('btnDetener').classList.remove('hidden');
+                },
+                function(error) {
+                    console.error('Error GPS:', error);
+                    alert('Error al acceder al GPS: ' + error.message);
+                    document.getElementById('btnIniciar').innerHTML = 'Iniciar Sistema GPS';
+                    document.getElementById('btnIniciar').disabled = false;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function iniciarTracking() {
+            watchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    if (posicionAnterior) {
+                        const distancia = calcularDistancia(
+                            posicionAnterior.coords.latitude,
+                            posicionAnterior.coords.longitude,
+                            position.coords.latitude,
+                            position.coords.longitude
+                        );
+
+                        if (distancia > 0.001) { // Filtrar movimientos menores a 1 metro
+                            distanciaTotal += distancia;
+                            
+                            // Solo cobrar si es día de pico y placa
+                            const hoy = new Date().toISOString().split('T')[0];
+                            const ultimoDigito = parseInt(PLACA_VEHICULO.slice(-1));
+                            const digitosHoy = calendarioPicoPlaca[hoy];
+                            
+                            if (digitosHoy && digitosHoy.includes(ultimoDigito)) {
+                                const costo = distancia * TARIFA_POR_KM;
+                                costoTotal += costo;
+                                saldoActual -= costo;
+                            }
+                            
+                            calcularVelocidad(position);
+                            actualizarEstadisticas();
+                            guardarDatosLocales();
+                        }
+                    }
+                    
+                    posicionAnterior = position;
+                    posicionActual = position;
+                    actualizarUbicacion(position);
+                },
+                function(error) {
+                    console.error('Error tracking GPS:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 60000,
+                    maximumAge: 30000
+                }
+            );
+        }
+
+        function detenerSistema() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+            
+            sistemaActivo = false;
+            gpsActivo = false;
+            actualizarInterfazGPS();
+            
+            document.getElementById('btnDetener').classList.add('hidden');
+            document.getElementById('btnIniciar').classList.remove('hidden');
+            document.getElementById('btnIniciar').innerHTML = 'Iniciar Sistema GPS';
+            document.getElementById('btnIniciar').disabled = false;
+        }
+
+        // Cálculos matemáticos
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function calcularVelocidad(position) {
+            if (position.coords.speed !== null && position.coords.speed > 0) {
+                velocidadPromedio = Math.round(position.coords.speed * 3.6); // m/s a km/h
+            }
+        }
+
+        // Actualización de interfaz
+        function actualizarInterfazGPS() {
+            const dot = document.getElementById('gpsDot');
+            const status = document.getElementById('gpsStatus');
+            
+            if (gpsActivo) {
+                dot.className = 'gps-dot gps-active';
+                status.textContent = 'GPS Activo - Midiendo distancia';
+            } else {
+                dot.className = 'gps-dot gps-inactive';
+                status.textContent = 'GPS Desactivado';
+            }
+        }
+
+        function actualizarEstadisticas() {
+            document.getElementById('kmHoy').textContent = distanciaTotal.toFixed(2);
+            document.getElementById('costoHoy').textContent = '$' + Math.round(costoTotal).toLocaleString();
+            
+            const saldoElement = document.getElementById('saldo');
+            saldoElement.textContent = '$' + Math.round(saldoActual).toLocaleString();
+            
+            if (saldoActual < 5000) {
+                saldoElement.className = 'saldo-amount saldo-low';
+            } else {
+                saldoElement.className = 'saldo-amount';
+            }
+            
+            document.getElementById('velocidad').textContent = velocidadPromedio;
+        }
+
+        function actualizarUbicacion(position) {
+            const lat = position.coords.latitude.toFixed(6);
+            const lon = position.coords.longitude.toFixed(6);
+            const precision = Math.round(position.coords.accuracy);
+            
+            document.getElementById('ubicacion').textContent = `${lat}, ${lon}`;
+            document.getElementById('precision').textContent = `${precision} metros`;
+        }
+
+        function actualizarReloj() {
+            const ahora = new Date();
+            
+            const fecha = ahora.toLocaleDateString('es-CO', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            const hora = ahora.toLocaleTimeString('es-CO');
+            
+            document.getElementById('fecha').textContent = fecha;
+            document.getElementById('hora').textContent = hora;
+        }
+
+        function actualizarInterfaz() {
+            actualizarEstadisticas();
+            actualizarInterfazGPS();
+        }
+
+        // Persistencia de datos
+        function guardarDatosLocales() {
+            const datos = {
+                distanciaTotal,
+                costoTotal,
+                saldoActual,
+                fecha: new Date().toISOString().split('T')[0]
+            };
+            localStorage.setItem('picoPlacaData', JSON.stringify(datos));
+        }
+
+        function cargarDatosLocales() {
+            const datosGuardados = localStorage.getItem('picoPlacaData');
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                const hoy = new Date().toISOString().split('T')[0];
+                
+                if (datos.fecha === hoy) {
+                    distanciaTotal = datos.distanciaTotal || 0;
+                    costoTotal = datos.costoTotal || 0;
+                    saldoActual = datos.saldoActual || 47500;
+                }
+            }
+        }
+
+        // Funcionalidades adicionales
+        function recargarSaldo() {
+            const recarga = 25000;
+            saldoActual += recarga;
+            actualizarEstadisticas();
+            guardarDatosLocales();
+            alert(`Recarga exitosa: +$${recarga.toLocaleString()}\nNuevo saldo: $${saldoActual.toLocaleString()}`);
+        }
+
+        function verHistorial() {
+            alert(`Historial del vehículo ${PLACA_VEHICULO}:\n\n` +
+                  `📅 Hoy: $${Math.round(costoTotal).toLocaleString()} (${distanciaTotal.toFixed(2)} km)\n` +
+                  `📅 Ayer: $2,400 (3.0 km)\n` +
+                  `📅 26 Ago: Día libre\n` +
+                  `📅 25 Ago: $4,000 (5.0 km)\n` +
+                  `📅 24 Ago: Día libre`);
+        }
+
+        // PWA - Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registrado:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker falló:', error);
+                    });
+            });
+        }
+
+        // Detección de instalación
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.remove('hidden');
+        });
+
+        function verificarInstalacion() {
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App instalada como PWA');
+            }
+        }
+    </script>
+</body>
+</html>
+
+<!-- ARCHIVOS ADICIONALES NECESARIOS -->
+
+<!-- manifest.json -->
+<script type="application/json" id="manifest">
+{
+  "name": "Control Pico y Placa Solidario",
+  "short_name": "PicoPlaca",
+  "description": "Sistema de control vehicular por kilómetros",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#2196F3",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "permissions": ["geolocation"]
+}
+</script>
+
+<!-- sw.js (Service Worker) -->
+<script type="text/javascript" id="serviceworker">
+const CACHE_NAME = 'pico-placa-v1';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/manifest.json'
+];
+
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+</script>
